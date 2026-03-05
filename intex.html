@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Зарплата по кассе</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --paper: #fffdf7;
+      --ink: #1f2a1d;
+      --muted: #5a6757;
+      --accent: #db6d2e;
+      --accent-2: #2f7f66;
+      --line: #d9d4c8;
+      --shadow: 0 12px 30px rgba(40, 38, 29, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Manrope', sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at -10% -10%, #f4d8b7 0%, transparent 60%),
+        radial-gradient(700px 450px at 110% 0%, #cae9db 0%, transparent 60%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+      animation: show 0.45s ease;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 40px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      font: inherit;
+      background: #fff;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    .btn-main { background: var(--accent); color: #fff; }
+    .btn-sub { background: var(--accent-2); color: #fff; }
+    .btn-ghost { background: #ebe7dc; color: var(--ink); }
+
+    .result {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .pill .k {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+    }
+
+    .pill .v {
+      font-size: 20px;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 9px 4px;
+      text-align: left;
+    }
+
+    tfoot td {
+      font-weight: 700;
+      border-top: 2px solid var(--line);
+      border-bottom: 0;
+    }
+
+    .small { color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      .result { grid-template-columns: 1fr; }
+      th:nth-child(2), td:nth-child(2), th:nth-child(3), td:nth-child(3) { display: none; }
+    }
+
+    @keyframes show {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Касса, процент, ставка</h1>
+      <p class="sub">Формула: касса × процент + ставка. Сезон: май-сентябрь.</p>
+    </section>
+
+    <section class="card">
+      <div class="grid">
+        <div>
+          <label for="date">Дата</label>
+          <input id="date" type="date" />
+        </div>
+        <div>
+          <label for="cash">Касса (₴)</label>
+          <input id="cash" type="number" min="0" step="0.01" placeholder="5000" />
+        </div>
+        <div>
+          <label for="percent">Процент (%)</label>
+          <input id="percent" type="number" min="0" step="0.01" value="30" />
+        </div>
+        <div>
+          <label for="rate">Ставка за день (₴)</label>
+          <input id="rate" type="number" min="0" step="0.01" placeholder="3000" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-main" id="calcBtn">Посчитать</button>
+        <button class="btn-sub" id="saveBtn">Сохранить / Обновить день</button>
+        <button class="btn-ghost" id="clearBtn">Очистить сезон</button>
+      </div>
+
+      <div class="result">
+        <div class="pill"><div class="k">Доход по %</div><div class="v" id="percentAmount">0 ₴</div></div>
+        <div class="pill"><div class="k">Ставка</div><div class="v" id="rateAmount">0 ₴</div></div>
+        <div class="pill"><div class="k">Итог за день</div><div class="v" id="dayTotal">0 ₴</div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="small" id="seasonInfo"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Касса</th>
+            <th>% доход</th>
+            <th>Ставка</th>
+            <th>Итог</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+        <tfoot>
+          <tr>
+            <td>Итого</td>
+            <td id="sumCash">0 ₴</td>
+            <td id="sumPercent">0 ₴</td>
+            <td id="sumRate">0 ₴</td>
+            <td id="sumTotal">0 ₴</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'zarplata_web_v1';
+    const seasonStart = '-05-01';
+    const seasonEnd = '-09-30';
+
+    const $ = (id) => document.getElementById(id);
+    const fmt = (n) => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 2 }).format(n || 0);
+
+    const dateEl = $('date');
+    const cashEl = $('cash');
+    const percentEl = $('percent');
+    const rateEl = $('rate');
+    const percentAmountEl = $('percentAmount');
+    const rateAmountEl = $('rateAmount');
+    const dayTotalEl = $('dayTotal');
+    const rowsEl = $('rows');
+    const seasonInfoEl = $('seasonInfo');
+
+    const today = new Date().toISOString().slice(0, 10);
+    dateEl.value = today;
+
+    function load() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { entries: {} };
+      } catch {
+        return { entries: {} };
+      }
+    }
+
+    function save(db) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    }
+
+    function num(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function inSeason(date) {
+      const md = date.slice(5);
+      return md >= '05-01' && md <= '09-30';
+    }
+
+    function calc() {
+      const cash = num(cashEl.value);
+      const percent = num(percentEl.value);
+      const rate = num(rateEl.value);
+      const percentAmount = cash * percent / 100;
+      const total = percentAmount + rate;
+
+      percentAmountEl.textContent = fmt(percentAmount);
+      rateAmountEl.textContent = fmt(rate);
+      dayTotalEl.textContent = fmt(total);
+
+      return { cash, percent, rate, percentAmount, total };
+    }
+
+    function saveDay() {
+      const date = dateEl.value;
+      if (!date) return alert('Укажи дату');
+      if (!inSeason(date)) return alert('Вне сезона май-сентябрь');
+
+      const { cash, percent, rate, percentAmount, total } = calc();
+      const db = load();
+
+      db.entries[date] = {
+        cash,
+        percent,
+        dayRate: rate,
+        percentAmount,
+        total,
+        updatedAt: new Date().toISOString()
+      };
+
+      save(db);
+      render();
+      alert('Сохранено');
+    }
+
+    function clearSeason() {
+      if (!confirm('Удалить все записи сезона из браузера?')) return;
+      save({ entries: {} });
+      render();
+    }
+
+    function render() {
+      const db = load();
+      const year = (dateEl.value || today).slice(0, 4);
+      const from = `${year}${seasonStart}`;
+      const to = `${year}${seasonEnd}`;
+      seasonInfoEl.textContent = `Период: ${from} .. ${to}`;
+
+      const dates = Object.keys(db.entries).sort().filter((d) => d >= from && d <= to);
+
+      let sumCash = 0;
+      let sumPercent = 0;
+      let sumRate = 0;
+      let sumTotal = 0;
+
+      rowsEl.innerHTML = '';
+
+      for (const d of dates) {
+        const e = db.entries[d];
+        sumCash += e.cash;
+        sumPercent += e.percentAmount;
+        sumRate += e.dayRate;
+        sumTotal += e.total;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${d}</td>
+          <td>${fmt(e.cash)}</td>
+          <td>${fmt(e.percentAmount)} (${e.percent}%)</td>
+          <td>${fmt(e.dayRate)}</td>
+          <td>${fmt(e.total)}</td>
+        `;
+        rowsEl.appendChild(tr);
+      }
+
+      if (!dates.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="5" class="small">Пока нет записей за сезон.</td>';
+        rowsEl.appendChild(tr);
+      }
+
+      $('sumCash').textContent = fmt(sumCash);
+      $('sumPercent').textContent = fmt(sumPercent);
+      $('sumRate').textContent = fmt(sumRate);
+      $('sumTotal').textContent = fmt(sumTotal);
+    }
+
+    $('calcBtn').addEventListener('click', calc);
+    $('saveBtn').addEventListener('click', saveDay);
+    $('clearBtn').addEventListener('click', clearSeason);
+    dateEl.addEventListener('change', render);
+
+    calc();
+    render();
+  </script>
+</body>
+</html>
