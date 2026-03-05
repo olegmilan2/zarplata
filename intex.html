@@ -151,6 +151,61 @@
     }
 
     .small { color: var(--muted); font-size: 13px; }
+    .row-delete {
+      border: 1px solid #e2b7a1;
+      background: #fff1ea;
+      color: #8b2f0b;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .row-metric {
+      width: 120px;
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+      background: #fff;
+    }
+    .row-metric-save {
+      border: 1px solid #b7d8cb;
+      background: #eaf7f1;
+      color: #1f5f49;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 6px;
+    }
+    .date-toggle {
+      background: transparent;
+      border: 0;
+      padding: 0;
+      border-radius: 0;
+      color: #1f5f49;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .note-row td {
+      background: #faf7ef;
+      padding: 10px 8px;
+    }
+    .note-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .metric-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-right: 4px;
+    }
 
     @media (max-width: 760px) {
       .grid { grid-template-columns: 1fr; }
@@ -189,11 +244,16 @@
           <label for="rate">Ставка за день (₴)</label>
           <input id="rate" type="number" min="0" step="0.01" placeholder="3000" />
         </div>
+        <div>
+          <label for="coworker">Сменщик</label>
+          <input id="coworker" type="text" placeholder="Имя сменщика" />
+        </div>
       </div>
 
       <div class="actions">
         <button class="btn-main" id="calcBtn">Посчитать</button>
         <button class="btn-sub" id="saveBtn">Сохранить / Обновить день</button>
+        <button class="btn-ghost" id="deleteBtn">Удалить день</button>
         <button class="btn-ghost" id="clearBtn">Очистить сезон</button>
       </div>
 
@@ -214,6 +274,8 @@
             <th>% доход</th>
             <th>Ставка</th>
             <th>Итог</th>
+            <th>Сменщик</th>
+            <th>Действие</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -232,8 +294,6 @@
 
   <script>
     const STORAGE_KEY = 'zarplata_web_v1';
-    const seasonStart = '-05-01';
-    const seasonEnd = '-09-30';
 
     const $ = (id) => document.getElementById(id);
     const fmt = (n) => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 2 }).format(n || 0);
@@ -242,14 +302,27 @@
     const cashEl = $('cash');
     const percentEl = $('percent');
     const rateEl = $('rate');
+    const coworkerEl = $('coworker');
     const percentAmountEl = $('percentAmount');
     const rateAmountEl = $('rateAmount');
     const dayTotalEl = $('dayTotal');
     const rowsEl = $('rows');
     const seasonInfoEl = $('seasonInfo');
 
-    const today = new Date().toISOString().slice(0, 10);
-    dateEl.value = today;
+    function getTodayDate() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    let autoDateEnabled = true;
+    let expandedDate = null;
+
+    function syncCurrentDate() {
+      if (!autoDateEnabled) return;
+      dateEl.value = getTodayDate();
+    }
+
+    syncCurrentDate();
+    coworkerEl.value = load().entries[dateEl.value]?.coworker || '';
 
     function load() {
       try {
@@ -268,9 +341,21 @@
       return Number.isFinite(n) ? n : 0;
     }
 
-    function inSeason(date) {
-      const md = date.slice(5);
-      return md >= '05-01' && md <= '09-30';
+    function getMetrics(entry) {
+      return {
+        litht: Number(entry?.metrics?.litht) || 0,
+        premium: Number(entry?.metrics?.premium) || 0,
+        hard: Number(entry?.metrics?.hard) || 0
+      };
+    }
+
+    function escHtml(value) {
+      return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
     }
 
     function calc() {
@@ -290,10 +375,10 @@
     function saveDay() {
       const date = dateEl.value;
       if (!date) return alert('Укажи дату');
-      if (!inSeason(date)) return alert('Вне сезона май-сентябрь');
 
       const { cash, percent, rate, percentAmount, total } = calc();
       const db = load();
+      const coworker = coworkerEl.value.trim();
 
       db.entries[date] = {
         cash,
@@ -301,12 +386,30 @@
         dayRate: rate,
         percentAmount,
         total,
+        coworker: coworker || db.entries[date]?.coworker || '',
+        metrics: getMetrics(db.entries[date]),
         updatedAt: new Date().toISOString()
       };
 
       save(db);
       render();
       alert('Сохранено');
+    }
+
+    function deleteDay() {
+      const date = dateEl.value;
+      if (!date) return alert('Укажи дату');
+
+      const db = load();
+      if (!db.entries[date]) {
+        return alert('За эту дату записи нет.');
+      }
+
+      if (!confirm(`Удалить запись за ${date}?`)) return;
+      delete db.entries[date];
+      save(db);
+      render();
+      alert('Запись удалена');
     }
 
     function clearSeason() {
@@ -317,12 +420,11 @@
 
     function render() {
       const db = load();
-      const year = (dateEl.value || today).slice(0, 4);
-      const from = `${year}${seasonStart}`;
-      const to = `${year}${seasonEnd}`;
-      seasonInfoEl.textContent = `Период: ${from} .. ${to}`;
-
-      const dates = Object.keys(db.entries).sort().filter((d) => d >= from && d <= to);
+      seasonInfoEl.textContent = 'Показаны все сохраненные даты.';
+      const dates = Object.keys(db.entries).sort();
+      if (expandedDate && !dates.includes(expandedDate)) {
+        expandedDate = null;
+      }
 
       let sumCash = 0;
       let sumPercent = 0;
@@ -340,18 +442,40 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${d}</td>
+          <td><button class="date-toggle" data-toggle-date="${d}">${d}</button></td>
           <td>${fmt(e.cash)}</td>
           <td>${fmt(e.percentAmount)} (${e.percent}%)</td>
           <td>${fmt(e.dayRate)}</td>
           <td>${fmt(e.total)}</td>
+          <td>${e.coworker ? escHtml(e.coworker) : '—'}</td>
+          <td><button class="row-delete" data-date="${d}">Удалить</button></td>
         `;
         rowsEl.appendChild(tr);
+
+        if (expandedDate === d) {
+          const metrics = getMetrics(e);
+          const noteTr = document.createElement('tr');
+          noteTr.className = 'note-row';
+          noteTr.innerHTML = `
+            <td colspan="7">
+              <div class="note-box">
+                <span class="metric-label">litht</span>
+                <input class="row-metric" data-metric-date="${d}" data-metric-key="litht" type="number" step="0.01" min="0" value="${metrics.litht}" />
+                <span class="metric-label">premium</span>
+                <input class="row-metric" data-metric-date="${d}" data-metric-key="premium" type="number" step="0.01" min="0" value="${metrics.premium}" />
+                <span class="metric-label">hard</span>
+                <input class="row-metric" data-metric-date="${d}" data-metric-key="hard" type="number" step="0.01" min="0" value="${metrics.hard}" />
+                <button class="row-metric-save" data-metric-save-date="${d}">Сохранить</button>
+              </div>
+            </td>
+          `;
+          rowsEl.appendChild(noteTr);
+        }
       }
 
       if (!dates.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="5" class="small">Пока нет записей за сезон.</td>';
+        tr.innerHTML = '<td colspan="7" class="small">Пока нет сохраненных записей.</td>';
         rowsEl.appendChild(tr);
       }
 
@@ -363,11 +487,61 @@
 
     $('calcBtn').addEventListener('click', calc);
     $('saveBtn').addEventListener('click', saveDay);
+    $('deleteBtn').addEventListener('click', deleteDay);
     $('clearBtn').addEventListener('click', clearSeason);
-    dateEl.addEventListener('change', render);
+    rowsEl.addEventListener('click', (event) => {
+      const toggleBtn = event.target.closest('[data-toggle-date]');
+      if (toggleBtn) {
+        const date = toggleBtn.dataset.toggleDate;
+        expandedDate = expandedDate === date ? null : date;
+        render();
+        return;
+      }
+
+      const metricBtn = event.target.closest('[data-metric-save-date]');
+      if (metricBtn) {
+        const date = metricBtn.dataset.metricSaveDate;
+        const inputs = rowsEl.querySelectorAll(`[data-metric-date="${date}"]`);
+        if (!inputs.length) return;
+
+        const db = load();
+        if (!db.entries[date]) return;
+        db.entries[date].metrics = db.entries[date].metrics || {};
+        for (const input of inputs) {
+          const key = input.dataset.metricKey;
+          db.entries[date].metrics[key] = num(input.value);
+        }
+        db.entries[date].updatedAt = new Date().toISOString();
+        save(db);
+        render();
+        return;
+      }
+
+      const btn = event.target.closest('.row-delete');
+      if (!btn) return;
+
+      const date = btn.dataset.date;
+      const db = load();
+      if (!db.entries[date]) return;
+      if (!confirm(`Удалить запись за ${date}?`)) return;
+
+      delete db.entries[date];
+      save(db);
+      render();
+    });
+    dateEl.addEventListener('change', () => {
+      autoDateEnabled = false;
+      const db = load();
+      coworkerEl.value = db.entries[dateEl.value]?.coworker || '';
+      render();
+    });
 
     calc();
     render();
+    setInterval(() => {
+      syncCurrentDate();
+      render();
+    }, 60000);
   </script>
 </body>
 </html>
