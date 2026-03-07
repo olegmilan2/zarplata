@@ -93,12 +93,18 @@
       border: 1px solid var(--line);
       font: inherit;
       font-size: 16px;
+      line-height: 1.25;
       background: #fff;
     }
     input[type="date"] {
       text-align: left;
       direction: ltr;
       display: block;
+      min-height: 46px;
+    }
+    input[type="date"]::-webkit-date-and-time-value {
+      min-height: 1.2em;
+      text-align: left;
     }
 
     .actions {
@@ -381,8 +387,7 @@
 <body>
   <main class="wrap">
     <section class="card">
-      <h1>Касса, процент, ставка</h1>
-      <p class="sub">Формула: касса × процент + ставка. Сезон: май-сентябрь.</p>
+      <h1>Отчет</h1>
     </section>
 
     <section class="card">
