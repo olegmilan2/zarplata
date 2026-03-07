@@ -34,10 +34,7 @@
         radial-gradient(700px 450px at 110% 0%, #cae9db 0%, transparent 60%),
         var(--bg);
       min-height: 100vh;
-      padding: 20px;
-      padding-left: 20px;
-      padding-right: 20px;
-      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      padding: 20px 20px max(20px, env(safe-area-inset-bottom));
     }
 
     .wrap {
@@ -62,12 +59,6 @@
       font-size: clamp(24px, 4vw, 40px);
       line-height: 1.05;
       letter-spacing: -0.02em;
-    }
-
-    .sub {
-      color: var(--muted);
-      margin-top: 8px;
-      font-size: 14px;
     }
 
     .grid {
@@ -106,7 +97,7 @@
       overflow: hidden;
       -webkit-appearance: none;
       appearance: none;
-      padding-right: 40px;
+      padding: 12px 40px 12px 12px;
       position: relative;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none'%3E%3Crect x='3' y='4' width='18' height='17' rx='3' fill='%23f7f3e8' stroke='%235a6757' stroke-width='1.7'/%3E%3Cpath d='M3 9.5h18' stroke='%235a6757' stroke-width='1.7'/%3E%3Cpath d='M8 2.8v3.4M16 2.8v3.4' stroke='%235a6757' stroke-width='1.7' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='13' r='1' fill='%235a6757'/%3E%3Ccircle cx='12' cy='13' r='1' fill='%235a6757'/%3E%3Ccircle cx='16' cy='13' r='1' fill='%235a6757'/%3E%3Ccircle cx='8' cy='17' r='1' fill='%235a6757'/%3E%3Ccircle cx='12' cy='17' r='1' fill='%23db6d2e'/%3E%3Ccircle cx='16' cy='17' r='1' fill='%235a6757'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
@@ -252,6 +243,7 @@
       display: none;
       gap: 10px;
     }
+    /*noinspection CssUnusedSymbol*/
     .mobile-item {
       border: 1px solid var(--line);
       border-radius: 12px;
@@ -290,10 +282,11 @@
     .mobile-v {
       font-weight: 700;
     }
+    /*noinspection CssUnusedSymbol*/
     .mobile-note {
       border-top: 1px solid var(--line);
       margin-top: 8px;
-      padding-top: 8px;
+      padding: 8px 0 0;
     }
     .mobile-empty {
       border: 1px dashed var(--line);
@@ -319,6 +312,7 @@
       border-radius: 6px;
       background: #e6dcc5;
     }
+    /*noinspection CssUnusedSymbol*/
     .month-divider-mobile {
       border: 1px solid var(--line);
       background: #f3efe4;
@@ -370,7 +364,7 @@
     }
     .summary-row:last-child {
       border-bottom: 0;
-      padding-bottom: 0;
+      padding: 6px 0 0;
     }
     .summary-key {
       color: var(--muted);
@@ -495,6 +489,7 @@
 
   <script>
     const STORAGE_KEY = 'zarplata_web_v1';
+    const LEGACY_LIGHT_KEY = 'litht';
 
     const $ = (id) => document.getElementById(id);
     const fmt = (n) => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 2 }).format(n || 0);
@@ -512,6 +507,18 @@
     const seasonInfoEl = $('seasonInfo');
     const monthTotalsEl = $('monthTotals');
     const coworkerStatsEl = $('coworkerStats');
+    const sumCashEl = $('sumCash');
+    const sumPercentEl = $('sumPercent');
+    const sumRateEl = $('sumRate');
+    const sumTotalEl = $('sumTotal');
+    const mobileSumCashEl = $('mobileSumCash');
+    const mobileSumPercentEl = $('mobileSumPercent');
+    const mobileSumRateEl = $('mobileSumRate');
+    const mobileSumTotalEl = $('mobileSumTotal');
+    const calcBtn = $('calcBtn');
+    const saveBtn = $('saveBtn');
+    const deleteBtn = $('deleteBtn');
+    const clearBtn = $('clearBtn');
 
     function getTodayDate() {
       const now = new Date();
@@ -550,8 +557,9 @@
     }
 
     function getMetrics(entry) {
+      const legacyLight = entry?.metrics?.[LEGACY_LIGHT_KEY];
       return {
-        litht: Number(entry?.metrics?.litht) || 0,
+        light: Number(entry?.metrics?.light ?? legacyLight) || 0,
         premium: Number(entry?.metrics?.premium) || 0,
         hard: Number(entry?.metrics?.hard) || 0
       };
@@ -716,8 +724,8 @@
           noteTr.innerHTML = `
             <td colspan="7">
               <div class="note-box">
-                <span class="metric-label">litht</span>
-                <input class="row-metric" data-metric-date="${d}" data-metric-key="litht" type="number" step="0.01" min="0" value="${metrics.litht}" />
+                <span class="metric-label">light</span>
+                <input class="row-metric" data-metric-date="${d}" data-metric-key="light" type="number" step="0.01" min="0" value="${metrics.light}" />
                 <span class="metric-label">premium</span>
                 <input class="row-metric" data-metric-date="${d}" data-metric-key="premium" type="number" step="0.01" min="0" value="${metrics.premium}" />
                 <span class="metric-label">hard</span>
@@ -751,8 +759,8 @@
           noteBox.className = 'mobile-note';
           noteBox.innerHTML = `
             <div class="note-box">
-              <span class="metric-label">litht</span>
-              <input class="row-metric" data-metric-date="${d}" data-metric-key="litht" type="number" inputmode="decimal" step="0.01" min="0" value="${metrics.litht}" />
+              <span class="metric-label">light</span>
+              <input class="row-metric" data-metric-date="${d}" data-metric-key="light" type="number" inputmode="decimal" step="0.01" min="0" value="${metrics.light}" />
               <span class="metric-label">premium</span>
               <input class="row-metric" data-metric-date="${d}" data-metric-key="premium" type="number" inputmode="decimal" step="0.01" min="0" value="${metrics.premium}" />
               <span class="metric-label">hard</span>
@@ -774,25 +782,25 @@
         monthTotalsEl.innerHTML = '<div class="summary-row"><span class="summary-key">Нет данных</span></div>';
         coworkerStatsEl.innerHTML = '<div class="summary-row"><span class="summary-key">Нет данных</span></div>';
 
-        $('sumCash').textContent = fmt(0);
-        $('sumPercent').textContent = fmt(0);
-        $('sumRate').textContent = fmt(0);
-        $('sumTotal').textContent = fmt(0);
-        $('mobileSumCash').textContent = fmt(0);
-        $('mobileSumPercent').textContent = fmt(0);
-        $('mobileSumRate').textContent = fmt(0);
-        $('mobileSumTotal').textContent = fmt(0);
+        sumCashEl.textContent = fmt(0);
+        sumPercentEl.textContent = fmt(0);
+        sumRateEl.textContent = fmt(0);
+        sumTotalEl.textContent = fmt(0);
+        mobileSumCashEl.textContent = fmt(0);
+        mobileSumPercentEl.textContent = fmt(0);
+        mobileSumRateEl.textContent = fmt(0);
+        mobileSumTotalEl.textContent = fmt(0);
         return;
       }
 
-      $('sumCash').textContent = fmt(sumCash);
-      $('sumPercent').textContent = fmt(sumPercent);
-      $('sumRate').textContent = fmt(sumRate);
-      $('sumTotal').textContent = fmt(sumTotal);
-      $('mobileSumCash').textContent = fmt(sumCash);
-      $('mobileSumPercent').textContent = fmt(sumPercent);
-      $('mobileSumRate').textContent = fmt(sumRate);
-      $('mobileSumTotal').textContent = fmt(sumTotal);
+      sumCashEl.textContent = fmt(sumCash);
+      sumPercentEl.textContent = fmt(sumPercent);
+      sumRateEl.textContent = fmt(sumRate);
+      sumTotalEl.textContent = fmt(sumTotal);
+      mobileSumCashEl.textContent = fmt(sumCash);
+      mobileSumPercentEl.textContent = fmt(sumPercent);
+      mobileSumRateEl.textContent = fmt(sumRate);
+      mobileSumTotalEl.textContent = fmt(sumTotal);
 
       const monthsDesc = Object.keys(monthTotals).sort((a, b) => b.localeCompare(a));
       monthTotalsEl.innerHTML = monthsDesc.map((m) => {
@@ -810,10 +818,10 @@
       coworkerStatsEl.innerHTML = coworkerRows.join('');
     }
 
-    $('calcBtn').addEventListener('click', calc);
-    $('saveBtn').addEventListener('click', saveDay);
-    $('deleteBtn').addEventListener('click', deleteDay);
-    $('clearBtn').addEventListener('click', clearSeason);
+    calcBtn.addEventListener('click', calc);
+    saveBtn.addEventListener('click', saveDay);
+    deleteBtn.addEventListener('click', deleteDay);
+    clearBtn.addEventListener('click', clearSeason);
     function handleRowsClick(event, rootEl) {
       const toggleBtn = event.target.closest('[data-toggle-date]');
       if (toggleBtn) {
@@ -836,6 +844,7 @@
           const key = input.dataset.metricKey;
           db.entries[date].metrics[key] = num(input.value);
         }
+        delete db.entries[date].metrics[LEGACY_LIGHT_KEY];
         db.entries[date].updatedAt = new Date().toISOString();
         save(db);
         render();
