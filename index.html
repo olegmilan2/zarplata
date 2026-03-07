@@ -805,7 +805,7 @@
       const monthsDesc = Object.keys(monthTotals).sort((a, b) => b.localeCompare(a));
       monthTotalsEl.innerHTML = monthsDesc.map((m) => {
         const t = monthTotals[m];
-        return `<div class="summary-row"><span class="summary-key">${monthLabel(`${m}-01`)}</span><span>Касса ${fmt(t.cash)} | % ${fmt(t.percent)} | Ставка ${fmt(t.rate)} | Итог ${fmt(t.total)}</span></div>`;
+        return `<div class="summary-row"><span class="summary-key">${monthLabel(`${m}-01`)}</span><span>Итог ${fmt(t.total)}</span></div>`;
       }).join('');
 
       const coworkerRows = [];
