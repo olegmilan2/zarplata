@@ -94,6 +94,7 @@
       direction: ltr;
       display: block;
       min-height: 46px;
+      cursor: pointer;
       overflow: hidden;
       -webkit-appearance: none;
       appearance: none;
@@ -369,6 +370,10 @@
     .summary-key {
       color: var(--muted);
     }
+    .summary-sub {
+      color: var(--muted);
+      font-size: 12px;
+    }
 
     @media (max-width: 900px) {
       .grid { grid-template-columns: 1fr; }
@@ -408,20 +413,28 @@
           <input id="date" type="date" />
         </div>
         <div>
-          <label for="cash">Касса (₴)</label>
-          <input id="cash" type="number" inputmode="decimal" min="0" step="0.01" placeholder="5000" />
-        </div>
-        <div>
           <label for="percent">Процент (%)</label>
           <input id="percent" type="number" inputmode="decimal" min="0" step="0.01" value="30" />
+        </div>
+        <div>
+          <label for="coworker">Сменщик</label>
+          <input id="coworker" type="text" placeholder="Имя сменщика" />
+        </div>
+        <div>
+          <label for="cash">Касса (₴)</label>
+          <input id="cash" type="number" inputmode="decimal" min="0" step="0.01" placeholder="5000" />
         </div>
         <div>
           <label for="rate">Ставка за день (₴)</label>
           <input id="rate" type="number" inputmode="decimal" min="0" step="0.01" placeholder="3000" />
         </div>
         <div>
-          <label for="coworker">Сменщик</label>
-          <input id="coworker" type="text" placeholder="Имя сменщика" />
+          <label for="hookahs">Количество кальянов (шт)</label>
+          <input id="hookahs" type="number" inputmode="numeric" min="0" step="1" placeholder="0" />
+        </div>
+        <div>
+          <label for="tea">Чай за день</label>
+          <input id="tea" type="number" inputmode="numeric" min="0" step="1" placeholder="0" />
         </div>
       </div>
 
@@ -444,16 +457,18 @@
       <div class="desktop-table">
         <table>
           <thead>
-            <tr>
-              <th>Дата</th>
-              <th>Касса</th>
-              <th>% доход</th>
-              <th>Ставка</th>
-              <th>Итог</th>
-              <th>Сменщик</th>
-              <th>Действие</th>
-            </tr>
-          </thead>
+          <tr>
+            <th>Дата</th>
+            <th>Касса</th>
+            <th>% доход</th>
+            <th>Ставка</th>
+            <th>Кальяны</th>
+            <th>Чай</th>
+            <th>Итог</th>
+            <th>Сменщик</th>
+            <th>Действие</th>
+          </tr>
+        </thead>
           <tbody id="rows"></tbody>
           <tfoot>
             <tr>
@@ -461,6 +476,8 @@
               <td id="sumCash">0 ₴</td>
               <td id="sumPercent">0 ₴</td>
               <td id="sumRate">0 ₴</td>
+              <td id="sumHookahs">0</td>
+              <td id="sumTea">0</td>
               <td id="sumTotal">0 ₴</td>
             </tr>
           </tfoot>
@@ -473,12 +490,18 @@
           <div><div class="mobile-k">Касса</div><div class="mobile-v" id="mobileSumCash">0 ₴</div></div>
           <div><div class="mobile-k">% доход</div><div class="mobile-v" id="mobileSumPercent">0 ₴</div></div>
           <div><div class="mobile-k">Ставка</div><div class="mobile-v" id="mobileSumRate">0 ₴</div></div>
+          <div><div class="mobile-k">Кальяны</div><div class="mobile-v" id="mobileSumHookahs">0</div></div>
+          <div><div class="mobile-k">Чай</div><div class="mobile-v" id="mobileSumTea">0</div></div>
           <div><div class="mobile-k">Итог</div><div class="mobile-v" id="mobileSumTotal">0 ₴</div></div>
         </div>
       </div>
       <div class="summary-block">
         <div class="summary-title">Итого по месяцам</div>
         <div class="summary-list" id="monthTotals"></div>
+      </div>
+      <div class="summary-block">
+        <div class="summary-title">Чай по месяцам</div>
+        <div class="summary-list" id="teaTotals"></div>
       </div>
       <div class="summary-block">
         <div class="summary-title">Дни сменщиков по месяцам</div>
@@ -499,6 +522,8 @@
     const percentEl = $('percent');
     const rateEl = $('rate');
     const coworkerEl = $('coworker');
+    const hookahsEl = $('hookahs');
+    const teaEl = $('tea');
     const percentAmountEl = $('percentAmount');
     const rateAmountEl = $('rateAmount');
     const dayTotalEl = $('dayTotal');
@@ -510,15 +535,20 @@
     const sumCashEl = $('sumCash');
     const sumPercentEl = $('sumPercent');
     const sumRateEl = $('sumRate');
+    const sumHookahsEl = $('sumHookahs');
+    const sumTeaEl = $('sumTea');
     const sumTotalEl = $('sumTotal');
     const mobileSumCashEl = $('mobileSumCash');
     const mobileSumPercentEl = $('mobileSumPercent');
     const mobileSumRateEl = $('mobileSumRate');
+    const mobileSumHookahsEl = $('mobileSumHookahs');
+    const mobileSumTeaEl = $('mobileSumTea');
     const mobileSumTotalEl = $('mobileSumTotal');
     const calcBtn = $('calcBtn');
     const saveBtn = $('saveBtn');
     const deleteBtn = $('deleteBtn');
     const clearBtn = $('clearBtn');
+    const teaTotalsEl = $('teaTotals');
 
     function getTodayDate() {
       const now = new Date();
@@ -537,7 +567,17 @@
     }
 
     syncCurrentDate();
-    coworkerEl.value = load().entries[dateEl.value]?.coworker || '';
+
+    function fillFormFromEntry(entry) {
+      cashEl.value = entry?.cash ?? '';
+      if (entry?.percent !== undefined) percentEl.value = entry.percent;
+      rateEl.value = entry?.dayRate ?? '';
+      coworkerEl.value = entry?.coworker || '';
+      hookahsEl.value = entry?.hookahs ?? entry?.metrics?.hookahs ?? '';
+      teaEl.value = entry?.tea ?? entry?.metrics?.tea ?? '';
+    }
+
+    fillFormFromEntry(load().entries[dateEl.value]);
 
     function load() {
       try {
@@ -561,7 +601,9 @@
       return {
         light: Number(entry?.metrics?.light ?? legacyLight) || 0,
         premium: Number(entry?.metrics?.premium) || 0,
-        hard: Number(entry?.metrics?.hard) || 0
+        hard: Number(entry?.metrics?.hard) || 0,
+        hookahs: Number(entry?.metrics?.hookahs) || 0,
+        tea: Number(entry?.metrics?.tea) || 0
       };
     }
 
@@ -605,6 +647,8 @@
       const { cash, percent, rate, percentAmount, total } = calc();
       const db = load();
       const coworker = coworkerEl.value.trim();
+      const hookahs = num(hookahsEl.value);
+      const tea = num(teaEl.value);
 
       db.entries[date] = {
         cash,
@@ -613,7 +657,9 @@
         percentAmount,
         total,
         coworker: coworker || db.entries[date]?.coworker || '',
-        metrics: getMetrics(db.entries[date]),
+        hookahs,
+        tea,
+        metrics: { ...getMetrics(db.entries[date]), hookahs, tea },
         updatedAt: new Date().toISOString()
       };
 
@@ -666,6 +712,8 @@
       let sumPercent = 0;
       let sumRate = 0;
       let sumTotal = 0;
+      let sumHookahs = 0;
+      let sumTea = 0;
       const monthTotals = {};
       const coworkerMonthStats = {};
 
@@ -679,7 +727,7 @@
         if (currentMonth !== prevMonth) {
           const dividerTr = document.createElement('tr');
           dividerTr.className = 'month-divider-row';
-          dividerTr.innerHTML = `<td colspan="7"><span class="month-divider-text">---- ${monthLabel(d)} ----</span></td>`;
+          dividerTr.innerHTML = `<td colspan="9"><span class="month-divider-text">---- ${monthLabel(d)} ----</span></td>`;
           rowsEl.appendChild(dividerTr);
 
           const dividerMobile = document.createElement('div');
@@ -693,13 +741,22 @@
         sumPercent += e.percentAmount;
         sumRate += e.dayRate;
         sumTotal += e.total;
+        const metrics = getMetrics(e);
+        const hookahs = Number(e.hookahs ?? metrics.hookahs) || 0;
+        const tea = Number(e.tea ?? metrics.tea) || 0;
+        sumHookahs += hookahs;
+        sumTea += tea;
         if (!monthTotals[currentMonth]) {
-          monthTotals[currentMonth] = { cash: 0, percent: 0, rate: 0, total: 0 };
+          monthTotals[currentMonth] = { cash: 0, percent: 0, rate: 0, total: 0, hookahs: 0, tea: 0, teaDays: 0, noTeaDays: 0 };
         }
         monthTotals[currentMonth].cash += e.cash;
         monthTotals[currentMonth].percent += e.percentAmount;
         monthTotals[currentMonth].rate += e.dayRate;
         monthTotals[currentMonth].total += e.total;
+        monthTotals[currentMonth].hookahs += hookahs;
+        monthTotals[currentMonth].tea += tea;
+        if (tea > 0) monthTotals[currentMonth].teaDays += 1;
+        else monthTotals[currentMonth].noTeaDays += 1;
 
         const coworkerName = (e.coworker || '').trim() || 'Без сменщика';
         if (!coworkerMonthStats[currentMonth]) coworkerMonthStats[currentMonth] = {};
@@ -711,6 +768,8 @@
           <td>${fmt(e.cash)}</td>
           <td>${fmt(e.percentAmount)} (${e.percent}%)</td>
           <td>${fmt(e.dayRate)}</td>
+          <td>${hookahs}</td>
+          <td>${tea}</td>
           <td>${fmt(e.total)}</td>
           <td>${e.coworker ? escHtml(e.coworker) : '—'}</td>
           <td><button class="row-delete" data-date="${d}">Удалить</button></td>
@@ -722,7 +781,7 @@
           const noteTr = document.createElement('tr');
           noteTr.className = 'note-row';
           noteTr.innerHTML = `
-            <td colspan="7">
+            <td colspan="9">
               <div class="note-box">
                 <span class="metric-label">light</span>
                 <input class="row-metric" data-metric-date="${d}" data-metric-key="light" type="number" step="0.01" min="0" value="${metrics.light}" />
@@ -748,6 +807,8 @@
             <div><div class="mobile-k">Касса</div><div class="mobile-v">${fmt(e.cash)}</div></div>
             <div><div class="mobile-k">% доход</div><div class="mobile-v">${fmt(e.percentAmount)} (${e.percent}%)</div></div>
             <div><div class="mobile-k">Ставка</div><div class="mobile-v">${fmt(e.dayRate)}</div></div>
+            <div><div class="mobile-k">Кальяны</div><div class="mobile-v">${hookahs}</div></div>
+            <div><div class="mobile-k">Чай</div><div class="mobile-v">${tea}</div></div>
             <div><div class="mobile-k">Итог</div><div class="mobile-v">${fmt(e.total)}</div></div>
           </div>
           <div><div class="mobile-k">Сменщик</div><div class="mobile-v">${e.coworker ? escHtml(e.coworker) : '—'}</div></div>
@@ -776,19 +837,24 @@
 
       if (!dates.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="7" class="small">Пока нет сохраненных записей.</td>';
+        tr.innerHTML = '<td colspan="9" class="small">Пока нет сохраненных записей.</td>';
         rowsEl.appendChild(tr);
         mobileRowsEl.innerHTML = '<div class="mobile-empty">Пока нет сохраненных записей.</div>';
         monthTotalsEl.innerHTML = '<div class="summary-row"><span class="summary-key">Нет данных</span></div>';
+        teaTotalsEl.innerHTML = '<div class="summary-row"><span class="summary-key">Нет данных</span></div>';
         coworkerStatsEl.innerHTML = '<div class="summary-row"><span class="summary-key">Нет данных</span></div>';
 
         sumCashEl.textContent = fmt(0);
         sumPercentEl.textContent = fmt(0);
         sumRateEl.textContent = fmt(0);
+        sumHookahsEl.textContent = '0';
+        sumTeaEl.textContent = '0';
         sumTotalEl.textContent = fmt(0);
         mobileSumCashEl.textContent = fmt(0);
         mobileSumPercentEl.textContent = fmt(0);
         mobileSumRateEl.textContent = fmt(0);
+        mobileSumHookahsEl.textContent = '0';
+        mobileSumTeaEl.textContent = '0';
         mobileSumTotalEl.textContent = fmt(0);
         return;
       }
@@ -796,16 +862,30 @@
       sumCashEl.textContent = fmt(sumCash);
       sumPercentEl.textContent = fmt(sumPercent);
       sumRateEl.textContent = fmt(sumRate);
+      sumHookahsEl.textContent = String(sumHookahs);
+      sumTeaEl.textContent = String(sumTea);
       sumTotalEl.textContent = fmt(sumTotal);
       mobileSumCashEl.textContent = fmt(sumCash);
       mobileSumPercentEl.textContent = fmt(sumPercent);
       mobileSumRateEl.textContent = fmt(sumRate);
+      mobileSumHookahsEl.textContent = String(sumHookahs);
+      mobileSumTeaEl.textContent = String(sumTea);
       mobileSumTotalEl.textContent = fmt(sumTotal);
 
       const monthsDesc = Object.keys(monthTotals).sort((a, b) => b.localeCompare(a));
       monthTotalsEl.innerHTML = monthsDesc.map((m) => {
         const t = monthTotals[m];
         return `<div class="summary-row"><span class="summary-key">${monthLabel(`${m}-01`)}</span><span>Итог ${fmt(t.total)}</span></div>`;
+      }).join('');
+
+      teaTotalsEl.innerHTML = monthsDesc.map((m) => {
+        const t = monthTotals[m];
+        return `
+          <div class="summary-row">
+            <span class="summary-key">${monthLabel(`${m}-01`)}</span>
+            <span>Чай ${t.tea} | С чаем ${t.teaDays} дн. | Без чая ${t.noTeaDays} дн.</span>
+          </div>
+        `;
       }).join('');
 
       const coworkerRows = [];
@@ -845,6 +925,8 @@
           db.entries[date].metrics[key] = num(input.value);
         }
         delete db.entries[date].metrics[LEGACY_LIGHT_KEY];
+        db.entries[date].hookahs = Number(db.entries[date].metrics.hookahs) || 0;
+        db.entries[date].tea = Number(db.entries[date].metrics.tea) || 0;
         db.entries[date].updatedAt = new Date().toISOString();
         save(db);
         render();
@@ -868,8 +950,13 @@
     dateEl.addEventListener('change', () => {
       autoDateEnabled = false;
       const db = load();
-      coworkerEl.value = db.entries[dateEl.value]?.coworker || '';
+      fillFormFromEntry(db.entries[dateEl.value]);
       render();
+    });
+    dateEl.addEventListener('click', () => {
+      if (typeof dateEl.showPicker === 'function') {
+        dateEl.showPicker();
+      }
     });
 
     calc();

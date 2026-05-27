@@ -1,7 +1,8 @@
-const CACHE_NAME = 'zarplata-cache-v3';
+const CACHE_NAME = 'zarplata-cache-v4';
 const ASSETS = [
   './',
   './index.html',
+  './intex.html',
   './manifest.webmanifest',
   './icon.svg',
   './icon-192.png',
@@ -32,17 +33,21 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  const isAppShell = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
+  const isAppShell =
+    url.pathname.endsWith('/') ||
+    url.pathname.endsWith('/index.html') ||
+    url.pathname.endsWith('/intex.html');
+  const shellCacheKey = url.pathname.endsWith('/intex.html') ? './intex.html' : './index.html';
 
   if (isAppShell) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy));
+          caches.open(CACHE_NAME).then((cache) => cache.put(shellCacheKey, copy));
           return response;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => caches.match(shellCacheKey))
     );
     return;
   }
